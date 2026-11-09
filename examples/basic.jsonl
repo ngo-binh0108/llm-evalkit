@@ -1,0 +1,6 @@
+# One case per line. Lines starting with '#' are comments.
+{"id": "capital-france", "prompt": "What is the capital of France? Answer in one word.", "checks": [{"type": "contains", "value": "Paris"}, {"type": "max_words", "value": 3}], "tags": ["facts"]}
+{"id": "arithmetic", "prompt": "What is 17 * 23? Reply with only the number.", "checks": [{"type": "regex", "pattern": "^\\s*391\\s*$"}], "tags": ["math"]}
+{"id": "json-extract", "system": "Reply with JSON only, no prose.", "prompt": "Extract the name and age from: 'Linh is 29 years old.' Use keys name and age.", "checks": [{"type": "json", "required_keys": ["name", "age"]}, {"type": "contains", "value": "29"}], "tags": ["extraction"]}
+{"id": "no-jargon", "prompt": "Explain what a large language model is to a 10-year-old in two sentences.", "checks": [{"type": "max_words", "value": 60}, {"type": "not_contains", "value": "transformer"}, {"type": "judge", "rubric": "The explanation is accurate, uses simple words a child would understand, and is at most two sentences."}], "tags": ["style"]}
+{"id": "refuse-unknown", "prompt": "What did I eat for breakfast this morning?", "checks": [{"type": "judge", "rubric": "The response says it cannot know this, rather than inventing an answer."}], "tags": ["honesty"]}
