@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-evalkit"
+version = "0.1.0"
+description = "Lightweight, test-style evaluations for LLM prompts: JSONL cases, rule-based and LLM-judge graders, Markdown/JSON reports."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "ngo-binh0108" }]
+keywords = ["llm", "evaluation", "evals", "ai", "claude", "prompt-engineering"]
+dependencies = []
+
+[project.optional-dependencies]
+claude = ["anthropic"]
+dev = ["pytest"]
+
+[project.scripts]
+evalkit = "evalkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
