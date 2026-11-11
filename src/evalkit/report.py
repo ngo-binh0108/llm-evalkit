@@ -54,7 +54,8 @@ def to_markdown(results: list[CaseResult]) -> str:
         failed = "; ".join(f"{c.type}: {c.detail}" for c in r.checks if not c.passed)
         if r.error:
             failed = f"error: {r.error}"
-        failed = failed.replace("|", "\\|")
+        # a table row has to stay on one line, and a "|" would start a new cell
+        failed = " ".join(failed.splitlines()).replace("|", "\\|")
         out.append(f"| {r.case.id} | {'✅' if r.passed else '❌'} | {failed} |")
     return "\n".join(out) + "\n"
 

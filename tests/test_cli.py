@@ -142,3 +142,17 @@ def test_claude_adapter_joins_text_and_raises_on_refusal(monkeypatch):
     fake_anthropic(monkeypatch, stop_reason="refusal", content=[])
     with pytest.raises(RuntimeError, match="declined"):
         asyncio.run(models.claude("m")(None, "q"))
+
+
+def test_run_without_the_sdk_explains_how_to_install_it(tmp_path, capsys, monkeypatch):
+    monkeypatch.setitem(sys.modules, "anthropic", None)  # makes `import anthropic` raise ImportError
+    assert main(["run", write_cases(tmp_path, CAPITAL)]) == 1
+    assert "pip install 'llm-evalkit[claude]'" in capsys.readouterr().err
+
+
+def test_markdown_rows_stay_on_one_line():
+    async def broken(system, prompt):
+        raise RuntimeError("line one\nline two")
+
+    report = to_markdown(asyncio.run(run_all([Case("multi", "p", [{"type": "contains", "value": "x"}])], broken)))
+    assert "| multi | ❌ | error: RuntimeError: line one line two |" in report.splitlines()

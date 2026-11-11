@@ -19,15 +19,16 @@ def _run(args: argparse.Namespace) -> int:
     if not cases:
         print("No cases to run.", file=sys.stderr)
         return 1
+    from . import models
+
+    # models.claude() imports anthropic when it is called, so that is where a missing SDK shows up
+    uses_judge = any(ch.get("type") == "judge" for c in cases for ch in c.checks)
     try:
-        from .models import claude
+        model = models.claude(args.model, effort=args.effort)
+        judge = models.claude(args.judge_model, effort="low") if uses_judge else None
     except ImportError:
         print("Running evals needs the Anthropic SDK: pip install 'llm-evalkit[claude]'", file=sys.stderr)
         return 1
-
-    model = claude(args.model, effort=args.effort)
-    uses_judge = any(ch.get("type") == "judge" for c in cases for ch in c.checks)
-    judge = claude(args.judge_model, effort="low") if uses_judge else None
 
     results = asyncio.run(run_all(cases, model, judge, args.concurrency))
     print(report.to_text(results))
