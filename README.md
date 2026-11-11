@@ -1,5 +1,7 @@
 # llm-evalkit
 
+[![tests](https://github.com/ngo-binh0108/llm-evalkit/actions/workflows/tests.yml/badge.svg)](https://github.com/ngo-binh0108/llm-evalkit/actions/workflows/tests.yml)
+
 Lightweight, test-style **evaluations for LLM prompts**. You write cases in a JSONL file, run them against Claude, and get a pass rate, like a unit test suite for prompts.
 
 - **Rule-based checks:** `contains`, `not_contains`, `regex`, `exact`, `json` (with required keys), `max_words`
@@ -99,6 +101,8 @@ print(to_text(results))
 pip install -e ".[dev]"
 pytest
 ```
+
+The tests stub the model and the Anthropic client, so they need no API key and make no network calls.
 
 ## License
 
