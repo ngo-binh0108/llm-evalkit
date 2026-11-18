@@ -1,5 +1,7 @@
 import asyncio
 
+import pytest
+
 from evalkit.graders import grade
 
 
@@ -53,3 +55,28 @@ def test_judge_uses_first_line_verdict():
     r = g("resp", {"type": "judge", "rubric": "r"}, failing)
     assert not r.passed and r.detail == "Invented an answer."
     assert not g("resp", {"type": "judge", "rubric": "r"}).passed
+
+
+def judge_says(text):
+    async def judge(system, prompt):
+        return text
+
+    return judge
+
+
+@pytest.mark.parametrize(
+    "first_line", ["**PASS**", "Verdict: PASS", "## Pass", "PASS.", "`PASS`", "> **Result:** PASS", "Passed"]
+)
+def test_judge_verdict_survives_formatting(first_line):
+    assert g("resp", {"type": "judge", "rubric": "r"}, judge_says(first_line + "\nFine.")).passed
+
+
+@pytest.mark.parametrize("first_line", ["**FAIL**", "Verdict: FAIL", "FAILED", "PASSABLE but not great", "I think it passes"])
+def test_judge_fails_without_a_pass_verdict(first_line):
+    r = g("resp", {"type": "judge", "rubric": "r"}, judge_says(first_line + "\nWhy."))
+    assert not r.passed
+
+
+def test_judge_without_a_verdict_says_so():
+    r = g("resp", {"type": "judge", "rubric": "r"}, judge_says("The response is mostly correct."))
+    assert not r.passed and r.detail.startswith("the judge gave no PASS/FAIL verdict")
