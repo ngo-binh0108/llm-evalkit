@@ -85,7 +85,17 @@ async def _judge(response: str, check: dict[str, Any], prompt: str, judge: Model
     )
     verdict = (await judge(JUDGE_SYSTEM, judge_prompt)).strip()
     first, _, reason = verdict.partition("\n")
-    return CheckResult("judge", first.strip().upper().startswith("PASS"), reason.strip() or first)
+    found = _VERDICT.match(first)
+    if found is None:
+        return CheckResult("judge", False, f"the judge gave no PASS/FAIL verdict: {first[:120]}")
+    return CheckResult("judge", found.group(1).upper() == "PASS", reason.strip() or first)
+
+
+# The verdict line, allowing what models add around it: markdown emphasis or a heading
+# ("**PASS**", "## FAIL"), a label ("Verdict: PASS") and trailing punctuation ("PASS.").
+_VERDICT = re.compile(
+    r"[\s*_#>`]*(?:(?:verdict|result|decision|answer)[*_`]*\s*[:\-][\s*_`]*)?(PASS|FAIL)(?:ED)?\b", re.I
+)
 
 
 async def grade(response: str, check: dict[str, Any], prompt: str, judge: ModelFn | None) -> CheckResult:
