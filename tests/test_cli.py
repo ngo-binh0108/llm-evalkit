@@ -1,6 +1,7 @@
 """The CLI, the report files, the concurrency limit and the Claude adapter, without network access."""
 
 import asyncio
+import io
 import json
 import sys
 import types
@@ -78,6 +79,19 @@ def test_tag_filter_and_fail_under(tmp_path, capsys, fake_claude):
     assert "1/2 passed" in out and "json" not in out
     assert main(["run", path, "--tag", "geo", "--fail-under", "0.5"]) == 0
     assert main(["run", path, "--tag", "none"]) == 1
+
+
+def test_non_ascii_results_on_a_cp1252_console(tmp_path, monkeypatch, fake_claude):
+    case = {"id": "thủ-đô", "prompt": "capital of Việt Nam?", "checks": [{"type": "contains", "value": "Hà Nội"}]}
+    md, js = tmp_path / "r.md", tmp_path / "r.json"
+    out = io.BytesIO()
+    monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(out, encoding="cp1252"))
+    code = main(["run", write_cases(tmp_path, case), "--markdown", str(md), "--json", str(js)])
+    sys.stdout.flush()
+    assert code == 2  # the stub answers "It is Paris.", so the case fails, but the run completes
+    assert "thủ-đô" in md.read_text(encoding="utf-8")
+    assert json.loads(js.read_text(encoding="utf-8"))["cases"][0]["id"] == "thủ-đô"
+    assert "0/1 passed" in out.getvalue().decode("cp1252")
 
 
 def test_concurrency_limit_is_respected():

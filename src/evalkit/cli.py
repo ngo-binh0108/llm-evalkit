@@ -31,11 +31,13 @@ def _run(args: argparse.Namespace) -> int:
         return 1
 
     results = asyncio.run(run_all(cases, model, judge, args.concurrency))
-    print(report.to_text(results))
+    # Write the report files first: the API calls are already paid for, and printing is the step
+    # most likely to fail (a console that cannot show some of the text).
     if args.markdown:
         Path(args.markdown).write_text(report.to_markdown(results), encoding="utf-8")
     if args.json:
         Path(args.json).write_text(report.to_json(results), encoding="utf-8")
+    print(report.to_text(results))
     rate = report.summary(results)["pass_rate"]
     return 0 if rate >= args.fail_under else 2
 
@@ -69,6 +71,10 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=_validate)
 
     args = parser.parse_args(argv)
+    # case ids and model output can hold text a Windows console's code page cannot encode
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     try:
         return args.func(args)
     except (ValueError, FileNotFoundError) as e:
