@@ -34,6 +34,33 @@ def test_load_rejects_bad_lines(tmp_path):
         load_cases(dup)
 
 
+def test_load_accepts_a_byte_order_mark_and_a_single_tag(tmp_path):
+    path = tmp_path / "bom.jsonl"
+    line = json.dumps({"id": "a", "prompt": "p", "checks": [{"type": "contains", "value": "p"}], "tags": "geo"})
+    path.write_text(line + "\n", encoding="utf-8-sig")  # what PowerShell's Out-File writes
+    (case,) = load_cases(path)
+    assert case.id == "a" and case.tags == ["geo"]
+
+
+@pytest.mark.parametrize(
+    "raw, message",
+    [
+        (5, "must be a JSON object, not int"),
+        (["p"], "must be a JSON object, not list"),
+        ({"prompt": 5, "checks": [{"type": "contains"}]}, "'prompt' string"),
+        ({"prompt": "p", "checks": "contains"}, "'checks' must be a list of objects"),
+        ({"prompt": "p", "checks": ["contains"]}, "'checks' must be a list of objects"),
+        ({"prompt": "p", "checks": [{"type": "contains"}], "tags": [1]}, "'tags' must be a list of strings"),
+        ({"prompt": "p", "checks": [{"type": "contains"}], "system": ["x"]}, "'system' must be a string"),
+    ],
+)
+def test_load_reports_malformed_cases(tmp_path, raw, message):
+    path = tmp_path / "bad.jsonl"
+    path.write_text(json.dumps(raw) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        load_cases(path)
+
+
 def test_run_all_keeps_order_and_isolates_errors():
     cases = [
         Case("ok", "hello", [{"type": "contains", "value": "HELLO"}], tags=["t"]),
